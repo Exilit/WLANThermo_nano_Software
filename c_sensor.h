@@ -140,8 +140,13 @@ void set_batdetect(boolean stat) {
 void get_Vbat() {
   
   // Digitalwert transformiert in Batteriespannung in mV
+  #ifdef BATTERY
   int voltage = analogRead(ANALOGREADBATTPIN);
-//Serial.println(voltage);
+  #else
+  // If compiled without battery support, set voltage to maximum
+  int voltage = battery.max;
+  #endif
+
 //ch[0].temp = voltage;
   // CHARGE DETECTION
   //                LOAD        COMPLETE        SHUTDOWN
@@ -271,9 +276,9 @@ void cal_soc() {
       //battery.voltage = voltage;
       battery.voltage = median_average(); 
     }
-    
+
     battery.percentage = ((battery.voltage - battery.min)*100)/(battery.max - battery.min);
-  
+      
     // Schwankungen verschiedener Batterien ausgleichen
     if (battery.percentage > 100) {
       if (battery.charge) battery.percentage = 99;
@@ -469,4 +474,3 @@ double get_thermocouple(bool internal) {
 
 // bei einem Neustart flag auf false, ebenfalls wenn voll geladen
 // dann alle 5 min speichern und beim ersten speichern flag auf true
-
