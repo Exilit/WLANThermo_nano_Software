@@ -1035,6 +1035,3 @@ uint16_t getDC(uint16_t impuls) {
   float val = ((float)(impuls - SERVOPULSMIN*10)/(SERVOPULSMAX - SERVOPULSMIN))*100;
   return (val < 500)?ceil(val):floor(val);   // nach oben : nach unten
 }
-
-
-
