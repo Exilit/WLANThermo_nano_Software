@@ -31,6 +31,10 @@
 //#define WEBSOCKET                           // ENABLE WEBSOCKET
 //#define AMPERE                              // ENABLE AMPERE MEASUREMENT TEST
  
+// Which ADC is beeing used
+//#define ADC_MAX11615
+#define ADC_MCP3208
+ 
 #ifdef DEBUG
   #define DPRINT(...)    Serial.print(__VA_ARGS__)
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)
@@ -220,5 +224,4 @@ void loop() {
   }
   
 }
-
 

@@ -19,6 +19,8 @@
  ****************************************************/
 
 #include <Wire.h>                 // I2C
+#include <SPI.h>
+#include <Mcp320x.h>
 //#include <SPI.h>                  // SPI
 //#include <ESP8266WiFi.h>          // WIFI   // CaptivePortal
 //#include <WiFiClientSecure.h>     // HTTPS
@@ -34,9 +36,10 @@
 #include <AsyncMqttClient.h>      // ASYNCMQTT
 //#include <StreamString.h>
 
+
 extern "C" {
 #include "user_interface.h"
-#include "spi_flash.h"
+//#include "spi_flash.h"
 #include "core_esp8266_si2c.c"
 }
 

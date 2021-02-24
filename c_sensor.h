@@ -27,6 +27,18 @@
     
  ****************************************************/
 
+#ifdef ADC_MCP3208
+#define SELPIN 15 //10 //Selection Pin 
+#define DATAOUT 13 //11//MOSI 
+#define DATAIN  12 //MISO 
+#define SPICLOCK  14 //13//Clock 
+
+#define SPI_CS      15       // SPI slave select
+#define ADC_VREF    2500     // 2.5V Vref
+#define ADC_CLK     1600000  // SPI clock 1.6MHz
+MCP3208 adc(ADC_VREF, SPI_CS);
+#endif
+
 
 // https://github.com/adafruit/Adafruit_HTU21DF_Library/blob/master/Adafruit_HTU21DF.cpp
 
@@ -44,6 +56,8 @@ void set_sensor() {
     pinMode(THERMOCOUPLE_CS, OUTPUT);
     digitalWrite(THERMOCOUPLE_CS, HIGH);
   }
+
+  #ifdef ADC_MAX11615
 
   // MAX11615
   byte reg = 0xA0;    // A0 = 10100000
@@ -93,15 +107,45 @@ void set_sensor() {
         setconfig(eSYSTEM,{});
       }
       sys.pitmaster = false;
- */   } else DPRINTPLN("No");
+ */   }
 //  }
   
+  #elif defined(ADC_MCP3208)
+
+  DPRINTLN("MCP3208");
+  //MCP3208
+  //set pin modes 
+   pinMode(SELPIN, OUTPUT);
+   pinMode(DATAOUT, OUTPUT);
+   pinMode(DATAIN, INPUT);
+   pinMode(SPICLOCK, OUTPUT);
+   //disable device to start with 
+   digitalWrite(SELPIN,HIGH);
+   digitalWrite(DATAOUT,LOW);
+   digitalWrite(SPICLOCK,LOW);
+   
+   
+    // configure PIN mode
+  pinMode(SPI_CS, OUTPUT);
+
+  // set initial PIN state
+  digitalWrite(SPI_CS, HIGH);
+
+  // initialize SPI interface for MCP3208
+  SPISettings settings(ADC_CLK, MSBFIRST, SPI_MODE0);
+  SPI.begin();
+  SPI.beginTransaction(settings);
+  adc.calibrate(MCP3208::Channel::SINGLE_4);
+
+  #endif
 }
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reading ADC-Channel Average
 int get_adc_average (byte ch) {  
+  #ifdef ADC_MAX11615
+  
   // Get the average value for the ADC channel (ch) selected. 
   // MAX11613/15 samples the channel 8 times and returns the average.  
   // Setup byte required: 0xA0 
@@ -123,6 +167,54 @@ int get_adc_average (byte ch) {
   word regdata = (Wire.read() << 8) | Wire.read();
 
   return regdata & 4095;
+  
+  #elif defined(ADC_MCP3208)
+/*
+  int adcvalue = 0;
+  byte commandbits = B11000000; //command bits - start, mode, chn (3), dont care (3)
+
+  //allow channel selection
+  commandbits|=((ch-1)<<3);
+
+  digitalWrite(SELPIN,LOW); //Select adc
+  // setup bits to be written
+  for (int i=7; i>=3; i--){
+    digitalWrite(DATAOUT,commandbits&1<<i);
+    //cycle clock
+    digitalWrite(SPICLOCK,HIGH);
+    digitalWrite(SPICLOCK,LOW);    
+  }
+
+  digitalWrite(SPICLOCK,HIGH);    //ignores 2 null bits
+  digitalWrite(SPICLOCK,LOW);
+  digitalWrite(SPICLOCK,HIGH);  
+  digitalWrite(SPICLOCK,LOW);
+
+  //read bits from adc
+  for (int i=11; i>=0; i--){
+    adcvalue+=digitalRead(DATAIN)<<i;
+    //cycle clock
+    digitalWrite(SPICLOCK,HIGH);
+    digitalWrite(SPICLOCK,LOW);
+  }
+  digitalWrite(SELPIN, HIGH); //turn off device
+  DPRINT(adcvalue);
+  DPRINT("\t");
+  return adcvalue;
+*/
+  SPISettings settings(ADC_CLK, MSBFIRST, SPI_MODE0);
+  SPI.begin();
+  SPI.beginTransaction(settings);
+  
+  int adcvalue = 0;
+  uint16_t raw = adc.read(MCP320xTypes::MCP3208::Channel(0b1000 + ch));
+
+  // get analog value
+  uint16_t adcvalue = adc.toAnalog(raw);
+  
+  return adcvalue;
+  
+  #endif
 }
 
 
@@ -474,3 +566,4 @@ double get_thermocouple(bool internal) {
 
 // bei einem Neustart flag auf false, ebenfalls wenn voll geladen
 // dann alle 5 min speichern und beim ersten speichern flag auf true
+
