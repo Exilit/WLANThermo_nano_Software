@@ -208,7 +208,7 @@ int get_adc_average (byte ch) {
   
   int adcvalue = 0;
   uint16_t raw = adc.read(MCP320xTypes::MCP3208::Channel(0b1000 + ch));
-
+  
   // get analog value
   adcvalue = adc.toAnalog(raw);
   
@@ -232,12 +232,7 @@ void set_batdetect(boolean stat) {
 void get_Vbat() {
   
   // Digitalwert transformiert in Batteriespannung in mV
-  #ifdef BATTERY
   int voltage = analogRead(ANALOGREADBATTPIN);
-  #else
-  // If compiled without battery support, set voltage to maximum
-  int voltage = battery.max;
-  #endif
 
 //ch[0].temp = voltage;
   // CHARGE DETECTION
@@ -270,7 +265,11 @@ void get_Vbat() {
   battery.state |= curStatePull<<1;
 
   if (sys.god & (1<<1)) battery.state = 4;                   // Abschaltung der Erkennung
-
+  #ifndef BATTERY
+  // If compiled without battery support, set state to No Battery
+  battery.state = 4;
+  #endif
+  
   switch (battery.state) {
 
     case 0:                                                    // LOAD
