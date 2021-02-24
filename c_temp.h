@@ -106,6 +106,7 @@ void get_Temperature() {
   for (int i=0; i < sys.ch; i++)  {
 
     float value;
+    #ifdef ADC_MAX11615
 /* 
     // NTC der Reihe nach auslesen
     if (MAX1161x_ADDRESS == MAX11613_ADDRESS && i<4 && i!=0) {
@@ -117,6 +118,12 @@ void get_Temperature() {
     }
     else */ if (MAX1161x_ADDRESS == MAX11615_ADDRESS)    value = calcT(get_adc_average(i),ch[i].typ);
     else value = INACTIVEVALUE;
+ 
+    #elif defined(ADC_MCP3208)
+
+    value = calcT(get_adc_average(i),ch[i].typ);
+
+    #endif
  
     // Temperatursprung außerhalb der Grenzen macht keinen Sinn
     if (ch[i].temp == INACTIVEVALUE && (value < -15.0 || value > 300.0)) value = INACTIVEVALUE;  // wrong typ
