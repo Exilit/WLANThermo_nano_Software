@@ -121,8 +121,10 @@ void get_Temperature() {
  
     #elif defined(ADC_MCP3208)
 
-    value = calcT(get_adc_average(i),ch[i].typ);
-
+	// The first four chanels are not connected. So treat 5-8 like 1-4 and set the other inactive
+	if(i < 4) value = calcT(get_adc_average(i+4),ch[i].typ);
+	else value = INACTIVEVALUE;
+	
     #endif
  
     // Temperatursprung außerhalb der Grenzen macht keinen Sinn
