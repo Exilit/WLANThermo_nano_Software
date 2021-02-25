@@ -121,9 +121,9 @@ void get_Temperature() {
  
     #elif defined(ADC_MCP3208)
 
-	// The first four chanels are not connected. So treat 5-8 like 1-4 and set the other inactive
-	if(i < 4) value = calcT(get_adc_average(i+4),ch[i].typ);
-	else value = INACTIVEVALUE;
+    // The first four chanels are not connected. So start with an offset and set the channels below inactive
+    if(i < CHOFFSET) value = calcT(get_adc_average(i+CHOFFSET),ch[i].typ);
+    else value = INACTIVEVALUE;
 	
     #endif
  
@@ -237,4 +237,3 @@ void transform_limits() {
     ch[i].min = min;
   }
 }
-

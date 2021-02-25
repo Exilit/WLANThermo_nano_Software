@@ -36,6 +36,7 @@
 #define SPI_CS      15       // SPI slave select
 #define ADC_VREF    2500     // 2.5V Vref
 #define ADC_CLK     1600000  // SPI clock 1.6MHz
+#define CHOFFSET    4 //Index of the first channel
 MCP3208 adc(ADC_VREF, SPI_CS);
 #endif
 
