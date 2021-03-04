@@ -226,6 +226,7 @@ struct System {
    bool transform;            // 12V transformation flag
    bool clientlog;
 
+   bool otamode;
 };
 
 System sys;

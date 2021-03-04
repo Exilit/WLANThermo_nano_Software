@@ -25,7 +25,7 @@
 
 // Entwicklereinstellungen
 #define DEBUG                               // ENABLE SERIAL DEBUG MESSAGES
-//#define OTA                                 // ENABLE OTA UPDATE
+#define OTA                                 // ENABLE OTA UPDATE
 //#define THINGSPEAK                          // ENABLE THINGSPEAK CONNECTION
 //#define MEMORYCLOUD                         // ENABLE DATA LOGGER
 //#define WEBSOCKET                           // ENABLE WEBSOCKET
@@ -149,6 +149,11 @@ void setup() {
       //if (SPIFFS.remove(LOG_FILE)) Serial.println("Neues Log angelegt");
     }
 
+    // if both buttons are pressed at startup, switch to Update Mode
+    if (!digitalRead(btn_r) && !digitalRead(btn_l)) {
+      sys.otamode = true;
+      display.drawString(64, 30, "UPDATE MODUS");
+    }
   }
 }
 
@@ -157,71 +162,76 @@ void setup() {
 // LOOP
 void loop() {
 
-  // Detect Serial Input
-  static char serialbuffer[300];
-  if (readline(Serial.read(), serialbuffer, 300) > 0) {
-    read_serial(serialbuffer);
-  }
-
-  // Manual Restart
-  if (sys.restartnow) {
-    if (wifi.mode == 5) WiFi.disconnect();
-    delay(100);
-    yield();
-    ESP.restart();
-  }
-  
-  // Standby oder Mess-Betrieb
-  if (standby_control()) return;
-
-  // Close Start Screen
-  if (question.typ == SYSTEMSTART && millis() > 3000) {
-    displayblocked = false;   // Close Start Screen (if not already done)
-    question.typ = NO;
-  }
-
-
-  // WiFi - Monitoring
-  wifimonitoring();
-
-  // MQTT - Abschaltung und Initialisierung
-  checkMqtt(); 
-  
-  // Detect OTA
-  #ifdef OTA
-    ArduinoOTA.handle();
-  #endif
-
-  // HTTP Update
-  check_api();
-  if (update.state > 0) do_http_update();
-  
-  // Detect Button Event
-  if (button_input()) button_event();
-  
-  // Update Display
-  int remainingTimeBudget;
-  if (!displayblocked)  remainingTimeBudget = ui.update();
-  else remainingTimeBudget = 1;
-
-  // Timer Actions
-  if (remainingTimeBudget > 0) {
-    // Don't do stuff if you are below your time budget.
-
-    maintimer();
-
-    #ifdef AMPERE
-    ampere_control();
+  if (sys.otamode) {
+    // Do Nothing
+	#ifdef OTA
+      ArduinoOTA.handle();
     #endif
-
-    // Pitmaster eventuell raus aus der Bedingung
-    pitmaster_control(0);      // Pitmaster 1
-    updateServo();
+  } else {
+    // Detect Serial Input
+    static char serialbuffer[300];
+    if (readline(Serial.read(), serialbuffer, 300) > 0) {
+      read_serial(serialbuffer);
+    }
+  
+    // Manual Restart
+    if (sys.restartnow) {
+      if (wifi.mode == 5) WiFi.disconnect();
+      delay(100);
+      yield();
+      ESP.restart();
+    }
     
-    if (servointerrupt) {   // nur innerhalb eines Servo-Takts
-      delay(10);   // sonst geht das Wifi Modul nicht in Standby, yield() reicht nicht!
+    // Standby oder Mess-Betrieb
+    if (standby_control()) return;
+  
+    // Close Start Screen
+    if (question.typ == SYSTEMSTART && millis() > 3000) {
+      displayblocked = false;   // Close Start Screen (if not already done)
+      question.typ = NO;
+    }
+  
+  
+    // WiFi - Monitoring
+    wifimonitoring();
+  
+    // MQTT - Abschaltung und Initialisierung
+    checkMqtt(); 
+    
+    // Detect OTA
+    #ifdef OTA
+      ArduinoOTA.handle();
+    #endif
+  
+    // HTTP Update
+    check_api();
+    if (update.state > 0) do_http_update();
+    
+    // Detect Button Event
+    if (button_input()) button_event();
+    
+    // Update Display
+    int remainingTimeBudget;
+    if (!displayblocked)  remainingTimeBudget = ui.update();
+    else remainingTimeBudget = 1;
+  
+    // Timer Actions
+    if (remainingTimeBudget > 0) {
+      // Don't do stuff if you are below your time budget.
+  
+      maintimer();
+  
+      #ifdef AMPERE
+      ampere_control();
+      #endif
+  
+      // Pitmaster eventuell raus aus der Bedingung
+      pitmaster_control(0);      // Pitmaster 1
+      updateServo();
+      
+      if (servointerrupt) {   // nur innerhalb eines Servo-Takts
+        delay(10);   // sonst geht das Wifi Modul nicht in Standby, yield() reicht nicht!
+      }
     }
   }
-  
 }
-
