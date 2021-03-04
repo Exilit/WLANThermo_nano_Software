@@ -207,13 +207,8 @@ int get_adc_average (byte ch) {
   SPI.begin();
   SPI.beginTransaction(settings);
   
-  int adcvalue = 0;
   uint16_t raw = adc.read(MCP320xTypes::MCP3208::Channel(0b1000 + ch));
-  
-  // get analog value
-  adcvalue = adc.toAnalog(raw);
-  
-  return adcvalue;
+  return raw;
   
   #endif
 }
@@ -231,10 +226,14 @@ void set_batdetect(boolean stat) {
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reading Battery Voltage
 void get_Vbat() {
-  
+  #ifdef BATTERY
   // Digitalwert transformiert in Batteriespannung in mV
   int voltage = analogRead(ANALOGREADBATTPIN);
-
+  #else
+  // If compiled without battery support, set state to No Battery
+  int voltage = battery.max;
+  #endif
+  
 //ch[0].temp = voltage;
   // CHARGE DETECTION
   //                LOAD        COMPLETE        SHUTDOWN
@@ -266,10 +265,10 @@ void get_Vbat() {
   battery.state |= curStatePull<<1;
 
   if (sys.god & (1<<1)) battery.state = 4;                   // Abschaltung der Erkennung
-  #ifndef BATTERY
+  /*#ifndef BATTERY
   // If compiled without battery support, set state to No Battery
   battery.state = 4;
-  #endif
+  #endif*/
   
   switch (battery.state) {
 
